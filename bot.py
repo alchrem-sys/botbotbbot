@@ -5,9 +5,14 @@ import asyncpg
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
+# --- Змінні середовища прямо в коді ---
+os.environ["BOT_TOKEN"] = "8353609125:AAGzwKe0bWujPfrNWGo7T7VnEsixo3NSyFc"
+os.environ["DATABASE_URL"] = "postgres://postgres:alosha.achrem@db.xuprpqyzspjzyobsgxqv.supabase.co:5432/postgres"
+os.environ["ADMIN_ID"] = "123456789"
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 DATABASE_URL = os.getenv("DATABASE_URL")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "868931721"))
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 if not BOT_TOKEN or not DATABASE_URL:
     print("❌ Не встановлені BOT_TOKEN або DATABASE_URL!")
@@ -152,9 +157,8 @@ def main():
         asyncio.create_task(daily_reminder(app))
 
     app.post_init = start_tasks
-    print("🤖 Бот з PostgreSQL запущено на Railway!")
+    print("🤖 Бот з PostgreSQL запущено!")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
-
