@@ -5,36 +5,33 @@ from datetime import datetime, timedelta, timezone
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# 🔹 Токен бота
+# -------------------- Налаштування --------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
-    print("❌ Токен не встановлений! Додай BOT_TOKEN у Railway Variables та перезапусти.")
+    print("❌ Токен не встановлений!")
     exit(1)
 
-# 🔹 ID адміністратора
-ADMIN_ID = 868931721  # <- заміни на свій ID
-
-# 🔹 Файл для збереження даних
+ADMIN_ID = 868931721  # <- твій Telegram ID
 DATA_FILE = "data.json"
 
-# --- Завантаження/збереження даних з блокуванням ---
+# -------------------- Збереження даних --------------------
 data_lock = asyncio.Lock()
 
 def load_data():
     try:
-        with open(DATA_FILE, "r") as f:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
         return {}
+
+data = load_data()
 
 async def save_data():
     async with data_lock:
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
 
-data = load_data()
-
-# --- Команди ---
+# -------------------- Команди --------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if user_id not in data:
@@ -86,15 +83,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Пиши лише числа або «прокрутив підар» 😉")
 
-# --- Команда для розсилки ---
+# -------------------- Адмін-розсилка --------------------
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id != ADMIN_ID:
+    if update.effective_user.id != ADMIN_ID:
         await update.message.reply_text("❌ Тільки адміністратор може використовувати цю команду.")
         return
 
     if not context.args:
-        await update.message.reply_text("❌Вкажи повідомлення для розсилки: /broadcast Текст")
+        await update.message.reply_text("❌ Вкажи повідомлення для розсилки: /broadcast Текст")
         return
 
     message = " ".join(context.args)
@@ -110,7 +106,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(f"✅ Розсилка завершена! Успішно: {success}, Не вдалося: {fail}")
 
-# --- Щоденне нагадування ---
+# -------------------- Щоденні нагадування --------------------
 async def daily_reminder(app: Application):
     while True:
         now = datetime.now(timezone.utc)
@@ -118,8 +114,7 @@ async def daily_reminder(app: Application):
         if now > target:
             target += timedelta(days=1)
 
-        wait_seconds = (target - now).total_seconds()
-        await asyncio.sleep(wait_seconds)
+        await asyncio.sleep((target - now).total_seconds())
 
         for user_id in data.keys():
             try:
@@ -135,7 +130,7 @@ async def daily_reminder(app: Application):
             except Exception as e:
                 print(f"⚠️ Не вдалося надіслати (2) {user_id}: {e}")
 
-# --- Основна функція ---
+# -------------------- Основна функція --------------------
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
@@ -144,15 +139,13 @@ def main():
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # ✅ Запускаємо daily_reminder після ініціалізації через post_init
     async def start_reminder(app: Application):
         asyncio.create_task(daily_reminder(app))
 
     app.post_init = start_reminder
 
-    print("🤖 Бот запущено на Railway!")
+    print("🤖 Бот запущено!")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
-
