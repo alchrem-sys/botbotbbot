@@ -36,8 +36,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👋 Привіт, Я бот для фіксації плюсів і мінусів на альфі.\n\n"
         "Пиши типу +5 або -3, щоб оновити баланс.\n"
         "Команда /reset — скинути баланс.\n\n"
+        "Коли рестартаю бот, числа не запам'ятовуються.\n"
         "Щодня о 23:00 за Києвом приходить нагадування 🔔 «прокрути альфу».\n"
-        "Напиши «прокрутив», щоб підтвердити."
+        "Напиши «прокрутив», щоб підтвердити.\n\n"
+        "Знайшли помилку? - @l1oxsha."
     )
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -82,7 +84,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def daily_reminder(app: Application):
     while True:
         now = datetime.now(timezone.utc)
-        target = now.replace(hour=21, minute=21, second=0, microsecond=0)  # 23:00 Київ
+        target = now.replace(hour=20, minute=20, second=0, microsecond=0)  # 23:00 Київ
         if now > target:
             target += timedelta(days=1)
 
@@ -95,7 +97,7 @@ async def daily_reminder(app: Application):
             except Exception as e:
                 print(f"⚠️ Не вдалося надіслати {user_id}: {e}")
 
-        await asyncio.sleep(60)
+        await asyncio.sleep(3600)
         for user_id in list(data.keys()):
             try:
                 await app.bot.send_message(chat_id=int(user_id), text="⏰ Якщо ще не прокрутив — саме час!")
@@ -121,4 +123,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
