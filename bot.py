@@ -10,6 +10,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, ContextTyp
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("❌ BOT_TOKEN is missing! Set it in Railway Variables.")
+
+app = Application.builder().token(BOT_TOKEN).build()
 # 🔹 Файл для збереження даних
 
 DATA_FILE = "data.json"
@@ -132,5 +134,6 @@ if __name__ == "__main__":
         asyncio.get_event_loop().run_until_complete(main())
     except KeyboardInterrupt:
         print("🛑 Зупинено вручну.")
+
 
 
