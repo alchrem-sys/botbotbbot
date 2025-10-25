@@ -112,24 +112,19 @@ async def daily_reminder(app: Application):
                 print(f"⚠️ Не вдалося надіслати (2) {user_id}: {e}")
 
 # --- Основна функція ---
-async def main():
+def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # Запуск фонової задачі
+    # запуск фонової задачі
     asyncio.create_task(daily_reminder(app))
 
     print("🤖 Бот запущено на Railway!")
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
-    await asyncio.Event().wait()  # Тримає процес активним
+    # Використовуємо сучасний run_polling замість старого start_polling
+    app.run_polling()
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("🛑 Зупинено вручну.")
+    main()
