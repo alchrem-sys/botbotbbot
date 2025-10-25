@@ -5,17 +5,13 @@ from datetime import datetime, timedelta, timezone
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# 🔹 Отримуємо токен із змінних середовища Railway
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
 if not BOT_TOKEN:
     print("❌ Токен не встановлений! Додай BOT_TOKEN у Railway Variables та перезапусти.")
-    exit(1)  # дружнє завершення замість ValueError
+    exit(1)
 
-# 🔹 Файл для збереження даних
 DATA_FILE = "data.json"
 
-# --- Завантаження/збереження даних ---
 def load_data():
     try:
         with open(DATA_FILE, "r") as f:
@@ -50,7 +46,6 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_data(data)
     await update.message.reply_text("✅ Баланс скинуто!")
 
-# --- Обробка повідомлень ---
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     text = update.message.text.strip().lower()
@@ -76,12 +71,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except ValueError:
             await update.message.reply_text("Пиши лише числа зі знаком (+5 або -3).")
-
     elif "прокрутив" in text:
         data[user_id]["last_ack"] = datetime.now(timezone.utc).isoformat()
         save_data(data)
         await update.message.reply_text("🔥 Красава, альфа прокручена!")
-
     else:
         await update.message.reply_text("Пиши лише числа або «прокрутив» 😉")
 
@@ -89,8 +82,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def daily_reminder(app: Application):
     while True:
         now = datetime.now(timezone.utc)
-        # 23:00 Київ = 20:00 UTC
-        target = now.replace(hour=20, minute=0, second=0, microsecond=0)
+        target = now.replace(hour=20, minute=0, second=0, microsecond=0)  # 23:00 Київ
         if now > target:
             target += timedelta(days=1)
 
@@ -103,7 +95,6 @@ async def daily_reminder(app: Application):
             except Exception as e:
                 print(f"⚠️ Не вдалося надіслати {user_id}: {e}")
 
-        # Повторне нагадування через 1 годину
         await asyncio.sleep(3600)
         for user_id in list(data.keys()):
             try:
@@ -119,11 +110,13 @@ def main():
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # запуск фонової задачі
-    asyncio.create_task(daily_reminder(app))
+    # ✅ Запускаємо daily_reminder після ініціалізації через post_init
+    async def start_reminder(app: Application):
+        asyncio.create_task(daily_reminder(app))
+
+    app.post_init = start_reminder
 
     print("🤖 Бот запущено на Railway!")
-    # Використовуємо сучасний run_polling замість старого start_polling
     app.run_polling()
 
 if __name__ == "__main__":
