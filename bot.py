@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, ContextTyp
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 DATABASE_URL = os.getenv("DATABASE_URL")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "123456789"))
+ADMIN_ID = int(os.getenv("ADMIN_ID", "868931721"))
 
 if not BOT_TOKEN or not DATABASE_URL:
     print("❌ Не встановлені BOT_TOKEN або DATABASE_URL!")
@@ -157,3 +157,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
