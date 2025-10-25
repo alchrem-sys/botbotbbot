@@ -1,6 +1,5 @@
 
-python-telegram-bot[job-queue]==21.6
-nest_asyncio
-
+python-telegram-bot==20.4
+asyncpg==0.27.0
 
 
