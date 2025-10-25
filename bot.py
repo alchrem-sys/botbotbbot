@@ -25,6 +25,32 @@ def save_data(data):
 
 data = load_data()
 
+# Встав свій Telegram ID
+ADMIN_ID = 868931721  # <- заміни на свій реальний ID
+
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id != ADMIN_ID:
+        await update.message.reply_text("❌ Тільки адміністратор може використовувати цю команду.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("❌ Вкажи повідомлення для розсилки: /broadcast Текст")
+        return
+
+    message = " ".join(context.args)
+    success, fail = 0, 0
+
+    for uid in data.keys():
+        try:
+            await context.bot.send_message(chat_id=int(uid), text=message)
+            success += 1
+        except Exception as e:
+            print(f"⚠️ Не вдалося надіслати {uid}: {e}")
+            fail += 1
+
+    await update.message.reply_text(f"✅ Розсилка завершена! Успішно: {success}, Не вдалося: {fail}")
+
 # --- Команди ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -123,5 +149,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
