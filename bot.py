@@ -5,18 +5,15 @@ from datetime import datetime, timedelta, timezone
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-
-# 🔹 Отримує токен із середовища Railway (через Variables)
+# 🔹 Отримуємо токен із змінних середовища Railway
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
-    raise ValueError("❌ BOT_TOKEN is missing! Set it in Railway Variables.")
+    raise ValueError("❌ BOT_TOKEN відсутній! Додай його в Railway Variables.")
 
-app = Application.builder().token(BOT_TOKEN).build()
 # 🔹 Файл для збереження даних
-
 DATA_FILE = "data.json"
 
-# --- Load/save data ---
+# --- Завантаження/збереження даних ---
 def load_data():
     try:
         with open(DATA_FILE, "r") as f:
@@ -30,7 +27,7 @@ def save_data(data):
 
 data = load_data()
 
-# --- Commands ---
+# --- Команди ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if user_id not in data:
@@ -39,9 +36,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         "👋 Привіт! Я бот для фіксації плюсів і мінусів.\n\n"
-        "Пиши +5 або -3 щоб оновити баланс.\n"
-        "Команда /reset — скинути.\n\n"
-        "Кожного дня о 23:00 за Києвом приходить нагадування 🔔 «прокрути альфу».\n"
+        "Пиши +5 або -3, щоб оновити баланс.\n"
+        "Команда /reset — скинути баланс.\n\n"
+        "Щодня о 23:00 за Києвом приходить нагадування 🔔 «прокрути альфу».\n"
         "Напиши «прокрутив», щоб підтвердити."
     )
 
@@ -51,12 +48,11 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_data(data)
     await update.message.reply_text("✅ Баланс скинуто!")
 
-# --- Handle messages ---
+# --- Обробка повідомлень ---
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     text = update.message.text.strip().lower()
 
-    # ensure user exists
     if user_id not in data:
         data[user_id] = {"plus": 0.0, "minus": 0.0, "balance": 0.0, "last_ack": None}
 
@@ -87,11 +83,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Пиши лише числа або «прокрутив» 😉")
 
-# --- Daily reminder ---
+# --- Щоденне нагадування ---
 async def daily_reminder(app: Application):
     while True:
         now = datetime.now(timezone.utc)
-        target = now.replace(hour=20, minute=0, second=0, microsecond=0)  # 23:00 Kyiv
+        # 23:00 Київ = 20:00 UTC
+        target = now.replace(hour=20, minute=0, second=0, microsecond=0)
         if now > target:
             target += timedelta(days=1)
 
@@ -104,36 +101,33 @@ async def daily_reminder(app: Application):
             except Exception as e:
                 print(f"⚠️ Не вдалося надіслати {user_id}: {e}")
 
-        # через годину повторне нагадування
+        # Повторне нагадування через 1 годину
         await asyncio.sleep(3600)
         for user_id in list(data.keys()):
             try:
                 await app.bot.send_message(chat_id=int(user_id), text="⏰ Якщо ще не прокрутив — саме час!")
             except Exception as e:
-                print(f"⚠️ Не вдалося надіслати (2): {e}")
+                print(f"⚠️ Не вдалося надіслати (2) {user_id}: {e}")
 
-# --- Main ---
+# --- Основна функція ---
 async def main():
-    app = Application.builder().token(TOKEN).build()
+    app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # запуск фонової задачі
+    # Запуск фонової задачі
     asyncio.create_task(daily_reminder(app))
 
-    print("🤖 Бот запущено на Railway Worker!")
+    print("🤖 Бот запущено на Railway!")
     await app.initialize()
     await app.start()
     await app.updater.start_polling()
-    await asyncio.Event().wait()  # тримає процес активним
+    await asyncio.Event().wait()  # Тримає процес активним
 
 if __name__ == "__main__":
     try:
         asyncio.get_event_loop().run_until_complete(main())
     except KeyboardInterrupt:
         print("🛑 Зупинено вручну.")
-
-
-
