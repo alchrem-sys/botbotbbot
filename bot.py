@@ -87,7 +87,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id != ADMIN_ID:
-        await update.message.reply_text("❌ Тільки адміністратор може використовувати цю команду.")
+        await update.message.reply_text("❌Тільки адміністратор може використовувати цю команду.")
         return
 
     if not context.args:
@@ -151,4 +151,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
