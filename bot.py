@@ -81,7 +81,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_data(data)
         await update.message.reply_text("🔥 Красава, альфа прокручена!")
     else:
-        await update.message.reply_text("Пиши лише числа або «прокрутив» 😉")
+        await update.message.reply_text("Пиши лише числа або «прокрутив підар» 😉")
 
 # --- Команда для розсилки ---
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -151,5 +151,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
