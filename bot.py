@@ -79,7 +79,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif "прокрутив" in text:
         data[user_id]["last_ack"] = datetime.now(timezone.utc).isoformat()
         save_data(data)
-        await update.message.reply_text("🔥 Красава, альфа прокручена!")
+        await update.message.reply_text("🔥 Красава, альфа прокручена")
     else:
         await update.message.reply_text("Пиши лише числа або «прокрутив підар» 😉")
 
@@ -151,6 +151,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
