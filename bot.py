@@ -5,13 +5,19 @@ from datetime import datetime, timedelta, timezone
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
+# 🔹 Токен бота
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     print("❌ Токен не встановлений! Додай BOT_TOKEN у Railway Variables та перезапусти.")
     exit(1)
 
+# 🔹 ID адміністратора (твій Telegram числовий ID)
+ADMIN_ID = 123456789  # <- заміни на свій ID
+
+# 🔹 Файл для збереження даних
 DATA_FILE = "data.json"
 
+# --- Завантаження/збереження даних ---
 def load_data():
     try:
         with open(DATA_FILE, "r") as f:
@@ -25,47 +31,18 @@ def save_data(data):
 
 data = load_data()
 
-# Встав свій Telegram ID
-ADMIN_ID = 868931721  # <- заміни на свій реальний ID
-
-async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id != ADMIN_ID:
-        await update.message.reply_text("❌ Тільки адміністратор може використовувати цю команду.")
-        return
-
-    if not context.args:
-        await update.message.reply_text("❌ Вкажи повідомлення для розсилки: /broadcast Текст")
-        return
-
-    message = " ".join(context.args)
-    success, fail = 0, 0
-
-    for uid in data.keys():
-        try:
-            await context.bot.send_message(chat_id=int(uid), text=message)
-            success += 1
-        except Exception as e:
-            print(f"⚠️ Не вдалося надіслати {uid}: {e}")
-            fail += 1
-
-    await update.message.reply_text(f"✅ Розсилка завершена! Успішно: {success}, Не вдалося: {fail}")
-
 # --- Команди ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if user_id not in data:
         data[user_id] = {"plus": 0.0, "minus": 0.0, "balance": 0.0, "last_ack": None}
         save_data(data)
-
     await update.message.reply_text(
-        "👋 Привіт, Я бот для фіксації плюсів і мінусів на альфі.\n\n"
-        "Пиши типу +5 або -3, щоб оновити баланс.\n"
+        "👋 Привіт! Я бот для фіксації плюсів і мінусів.\n\n"
+        "Пиши +5 або -3, щоб оновити баланс.\n"
         "Команда /reset — скинути баланс.\n\n"
-        "Коли рестартаю бот, числа не запам'ятовуються.\n"
         "Щодня о 23:00 за Києвом приходить нагадування 🔔 «прокрути альфу».\n"
-        "Напиши «прокрутив», щоб підтвердити.\n\n"
-        "Знайшли помилку? - @l1oxsha."
+        "Напиши «прокрутив», щоб підтвердити."
     )
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -106,11 +83,35 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Пиши лише числа або «прокрутив» 😉")
 
+# --- Команда для розсилки ---
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id != ADMIN_ID:
+        await update.message.reply_text("❌ Тільки адміністратор може використовувати цю команду.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("❌ Вкажи повідомлення для розсилки: /broadcast Текст")
+        return
+
+    message = " ".join(context.args)
+    success, fail = 0, 0
+
+    for uid in data.keys():
+        try:
+            await context.bot.send_message(chat_id=int(uid), text=message)
+            success += 1
+        except Exception as e:
+            print(f"⚠️ Не вдалося надіслати {uid}: {e}")
+            fail += 1
+
+    await update.message.reply_text(f"✅ Розсилка завершена! Успішно: {success}, Не вдалося: {fail}")
+
 # --- Щоденне нагадування ---
 async def daily_reminder(app: Application):
     while True:
         now = datetime.now(timezone.utc)
-        target = now.replace(hour=20, minute=20, second=0, microsecond=0)  # 23:00 Київ
+        target = now.replace(hour=20, minute=0, second=0, microsecond=0)  # 23:00 Київ
         if now > target:
             target += timedelta(days=1)
 
@@ -136,6 +137,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset))
+    app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # ✅ Запускаємо daily_reminder після ініціалізації через post_init
@@ -149,6 +151,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
