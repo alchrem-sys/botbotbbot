@@ -1,10 +1,20 @@
 import asyncio
+import os
 import json
 from datetime import datetime, timedelta, timezone
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-TOKEN = "YOUR_BOT_TOKEN"
+
+# 🔹 Отримує токен із середовища Railway (через Variables)
+TOKEN = os.getenv("BOT_TOKEN")
+
+# 🔹 Якщо токен не знайдено — покаже зрозумілу помилку
+if not TOKEN:
+    raise ValueError("❌ BOT_TOKEN is missing! Set it in Railway Variables.")
+
+# 🔹 Файл для збереження даних
+
 DATA_FILE = "data.json"
 
 # --- Load/save data ---
@@ -125,3 +135,4 @@ if __name__ == "__main__":
         asyncio.get_event_loop().run_until_complete(main())
     except KeyboardInterrupt:
         print("🛑 Зупинено вручну.")
+
