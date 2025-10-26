@@ -94,7 +94,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if not context.args:
-        await update.message.reply_text("❌Вкажи повідомлення для розсилки: /broadcast Текст")
+        await update.message.reply_text("❌ Вкажи повідомлення для розсилки: /broadcast Текст")
         return
 
     message = " ".join(context.args)
@@ -155,4 +155,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
