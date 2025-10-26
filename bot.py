@@ -22,23 +22,24 @@ if not REDIS_URL or not REDIS_TOKEN:
     print("❌ REDIS_URL або REDIS_TOKEN не встановлені!")
     exit(1)
 
+# Підключення до Upstash Redis
 redis = Redis(url=REDIS_URL, token=REDIS_TOKEN)
 
 # -------------------- Функції для користувачів --------------------
-async def get_user(user_id: str):
-    data = await redis.get(user_id)
+def get_user(user_id: str):
+    data = redis.get(user_id)
     if data:
         return json.loads(data)
     return {"plus": 0.0, "minus": 0.0, "balance": 0.0, "last_ack": None}
 
-async def save_user(user_id: str, user_data: dict):
-    await redis.set(user_id, json.dumps(user_data))
+def save_user(user_id: str, user_data: dict):
+    redis.set(user_id, json.dumps(user_data))
 
 # -------------------- Команди --------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
-    user_data = await get_user(user_id)
-    await save_user(user_id, user_data)
+    user_data = get_user(user_id)
+    save_user(user_id, user_data)
     await update.message.reply_text(
         "👋 Привіт, Я бот для фіксації плюсів і мінусів на альфі.\n\n"
         "Пиши типу +5 або -3, щоб оновити баланс.\n"
@@ -53,12 +54,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     user_data = {"plus": 0.0, "minus": 0.0, "balance": 0.0, "last_ack": None}
-    await save_user(user_id, user_data)
+    save_user(user_id, user_data)
     await update.message.reply_text("✅ Баланс скинуто!")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
-    user_data = await get_user(user_id)
+    user_data = get_user(user_id)
 
     text = update.message.text.strip().lower()
     if text.startswith(("+", "-")):
@@ -70,7 +71,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 user_data["minus"] += abs(value)
 
             user_data["balance"] = round(user_data["plus"] - user_data["minus"], 2)
-            await save_user(user_id, user_data)
+            save_user(user_id, user_data)
 
             await update.message.reply_text(
                 f"✅ Плюс: {round(user_data['plus'], 2)}\n"
@@ -81,7 +82,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Пиши лише числа зі знаком (+5 або -3).")
     elif "прокрутив" in text:
         user_data["last_ack"] = datetime.now(timezone.utc).isoformat()
-        await save_user(user_id, user_data)
+        save_user(user_id, user_data)
         await update.message.reply_text("🔥 Красава, альфа прокручена")
     else:
         await update.message.reply_text("Пиши лише числа або «прокрутив підар» 😉")
@@ -99,7 +100,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = " ".join(context.args)
     success, fail = 0, 0
 
-    keys = await redis.keys("*")
+    keys = redis.keys("*")
     for uid in keys:
         try:
             await context.bot.send_message(chat_id=int(uid), text=message)
@@ -120,7 +121,7 @@ async def daily_reminder(app: Application):
 
         await asyncio.sleep((target - now).total_seconds())
 
-        keys = await redis.keys("*")
+        keys = redis.keys("*")
         for uid in keys:
             try:
                 await app.bot.send_message(chat_id=int(uid), text="🔔 Прокрути альфу!")
@@ -149,7 +150,7 @@ def main():
 
     app.post_init = start_tasks
 
-    print("🤖 Бот запущено з Upstash Redis!")
+    print("🤖 Бот запущено з Upstash Redis (синхронний)!")
     app.run_polling()
 
 if __name__ == "__main__":
