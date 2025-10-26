@@ -1,6 +1,7 @@
 
 python-telegram-bot==20.4
-asyncpg>=0.27.1
+upstash-redis
+
 
 
 
